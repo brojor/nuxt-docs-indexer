@@ -1,0 +1,40 @@
+{
+  "name": "nuxt-docs-indexer",
+  "version": "1.0.0",
+  "description": "CLI tool to index Nuxt docs.",
+  "author": {
+    "name": "BroJor",
+    "url": "https://brojor.me"
+  },
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brojor/nuxt-docs-indexer.git"
+  },
+  "keywords": [
+    "nuxt",
+    "docs",
+    "indexer"
+  ],
+  "main": "dist/index.js",
+  "bin": {
+    "nuxt-docs-indexer": "dist/index.js"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^4.12.0",
+    "@types/node": "^22.14.1",
+    "eslint": "^9.24.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3"
+  }
+}
