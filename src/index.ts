@@ -53,7 +53,7 @@ async function walkDir(section: string, dir: string, parts: string[] = []): Prom
       const filename = path.basename(fullPath).split('.')[1]
       const content = await fs.readFile(fullPath, 'utf8')
 
-      const { data, content: fileContent } = matter(content)
+      const { data: frontMatterData, content: fileContent } = matter(content)
       const tree = unified().use(remarkParse, { fragment: true }).parse(fileContent)
       const headings: Heading[] = []
       visit(tree, 'heading', (node) => {
@@ -62,8 +62,8 @@ async function walkDir(section: string, dir: string, parts: string[] = []): Prom
         }
       })
 
-      const headingHierarchies = generateHeadingHierarchies(headings, data.title)
-      headingHierarchies.unshift([data.title])
+      const headingHierarchies = generateHeadingHierarchies(headings, frontMatterData.title)
+      headingHierarchies.unshift([frontMatterData.title])
 
       const result = headingHierarchies.map((hierarchy) => {
         const title = hierarchy.pop() ?? ''
