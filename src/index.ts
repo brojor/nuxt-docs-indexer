@@ -67,7 +67,6 @@ async function walkDir(section: string, dir: string, parts: string[] = []): Prom
  */
 export async function generateIndex(): Promise<IndexItem[]> {
   const sections = await getSections()
-  console.log(JSON.stringify(sections, null, 2))
   const index: IndexItem[] = []
 
   for (const section of sections) {
