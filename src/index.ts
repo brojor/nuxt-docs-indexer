@@ -14,7 +14,7 @@ function getSections(): string[] {
     return fs.readdirSync(docsPath).filter((item) => {
       const fullPath = path.join(docsPath, item)
       return fs.statSync(fullPath).isDirectory()
-    }).slice(0, 3)
+    })
   }
   catch (error) {
     throw new Error('Chyba při čtení adresáře:', error.message)
@@ -24,7 +24,7 @@ function getSections(): string[] {
 async function walkDir(section: string, dir: string, parts: string[] = []): Promise<void> {
   const items = fs.readdirSync(dir).filter(item => !item.endsWith('.yml')).filter(item => !item.endsWith('index.md'))
 
-    for (const item of items.slice(0, 1)) {
+    for (const item of items) {
     const fullPath = path.join(dir, item)
     if (fs.statSync(fullPath).isDirectory()) {
       walkDir(section, fullPath, [...parts, item.split('.')[1]])
@@ -43,11 +43,12 @@ async function walkDir(section: string, dir: string, parts: string[] = []): Prom
       })
 
       const headingHierarchies = generateHeadingHierarchies(headings, data.title)
+      headingHierarchies.unshift([data.title])
 
       const result = headingHierarchies.map((hierarchy) => {
         const title = hierarchy.pop() ?? ''
         const subtitle = hierarchy.join(' > ')
-        const url = generateUrl(section, [...parts, filename], title)
+        const url = generateUrl(section, [...parts, filename], subtitle && title)
 
         return {
           title,
@@ -88,9 +89,14 @@ function generateHeadingHierarchies(headings: any[], rootName: string): string[]
   return result
 }
 
-function generateUrl(section: string, pathSegments: string[], headingText: string): string {
+function generateUrl(section: string, pathSegments: string[], headingText?: string): string {
+  const path = pathSegments.join('/')
   const baseUrl = 'https://nuxt.com/docs'
-  const fragment = string.slug(headingText, { lower: true, strict: true })
 
-  return `${baseUrl}/${section}/${pathSegments.join('/')}#${fragment}`
+  if (!headingText) {
+    return `${baseUrl}/${section}/${path}`
+  }
+
+  const fragment = string.slug(headingText, { lower: true, strict: true })
+  return `${baseUrl}/${section}/${path}#${fragment}`
 }
