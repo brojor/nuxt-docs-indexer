@@ -81,7 +81,8 @@ function generateHeadingHierarchies(headings: any[], rootName: string): string[]
       stack.pop()
     }
 
-    const currentPath = [...stack[stack.length - 1], title]
+    const lastPath = stack[stack.length - 1] || []
+    const currentPath = [...lastPath, title]
     result.push(currentPath)
     stack.push(currentPath)
   }
