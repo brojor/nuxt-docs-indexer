@@ -1,7 +1,7 @@
 import type { IndexItem } from './types'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { getDocsPath, getSections, readFileContent } from './fileUtils'
+import { getDocsPath, getSections, readFileContent, removeNumericPrefix } from './fileUtils'
 import { extractHeadings, generateHeadingHierarchies } from './markdownUtils'
 import { generateUrl } from './urlUtils'
 
@@ -22,7 +22,7 @@ function shouldProcessFile(filename: string): boolean {
  * @param parts - Array of path segments
  */
 async function processFile(section: string, filePath: string, parts: string[]): Promise<IndexItem[]> {
-  const fileName = path.basename(filePath).split('.')[1]
+  const fileName = removeNumericPrefix(path.basename(filePath))
   const fileContent = await readFileContent(filePath)
   const headings = extractHeadings(fileContent)
 
@@ -53,7 +53,7 @@ async function walkDir(section: string, dir: string, parts: string[] = []): Prom
     const stats = await fs.stat(fullPath)
 
     if (stats.isDirectory()) {
-      return walkDir(section, fullPath, [...parts, item.split('.')[1]])
+      return walkDir(section, fullPath, [...parts, removeNumericPrefix(item)])
     }
 
     return processFile(section, fullPath, parts)
@@ -71,7 +71,7 @@ export async function generateIndex(): Promise<IndexItem[]> {
   const index: IndexItem[] = []
 
   for (const section of sections) {
-    const sectionName = section.split('.')[1]
+    const sectionName = removeNumericPrefix(section)
     const results = await walkDir(sectionName, path.join(getDocsPath(), section))
     index.push(...results)
   }

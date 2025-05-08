@@ -31,6 +31,16 @@ export async function readFileContent(filePath: string): Promise<FileContent> {
 }
 
 /**
+ * Removes the numeric prefix from a file name
+ * @param fileName - The file name to remove the prefix from
+ */
+export function removeNumericPrefix(fileName: string): string {
+  const regex = /^\d+\./
+
+  return fileName.replace(regex, '')
+}
+
+/**
  * Gets the documentation path
  */
 export function getDocsPath(): string {
