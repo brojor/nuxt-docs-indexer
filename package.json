@@ -31,20 +31,18 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix"
   },
+  "dependencies": {
+    "@poppinss/string": "^1.3.0",
+    "gray-matter": "^4.0.3",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.0.0"
+  },
   "devDependencies": {
     "@antfu/eslint-config": "^4.12.0",
     "@types/node": "^22.14.1",
     "eslint": "^9.24.0",
     "tsup": "^8.4.0",
     "typescript": "^5.8.3"
-  },
-  "dependencies": {
-    "@flex-development/unist-util-visit": "^1.1.0",
-    "@poppinss/string": "^1.3.0",
-    "gray-matter": "^4.0.3",
-    "remark-parse": "^11.0.0",
-    "unified": "^11.0.5",
-    "unist-util-filter": "^5.0.1",
-    "unist-util-visit": "^5.0.0"
   }
 }
