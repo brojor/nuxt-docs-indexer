@@ -9,8 +9,9 @@ const MAX_HEADING_DEPTH = 3
 /**
  * Extracts headings from markdown content
  * @param fileContent - The parsed markdown file content
+ * @param section - The section of the documentation (e.g. 'api', 'guide')
  */
-export function extractHeadings(fileContent: FileContent): Heading[] {
+export function extractHeadings(fileContent: FileContent, section: string): Heading[] {
   const tree = unified()
     .use(remarkParse, { fragment: true })
     .parse(fileContent.content)
@@ -18,7 +19,10 @@ export function extractHeadings(fileContent: FileContent): Heading[] {
   const headings: Heading[] = []
 
   visit(tree, 'heading', (node) => {
-    if (node.depth <= MAX_HEADING_DEPTH) {
+    const isWithinDepthLimit = node.depth <= MAX_HEADING_DEPTH
+    const isNotApiSection = section !== 'api'
+
+    if (isWithinDepthLimit && isNotApiSection) {
       headings.push(node)
     }
   })

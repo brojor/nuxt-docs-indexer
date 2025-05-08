@@ -24,7 +24,7 @@ function shouldProcessFile(filename: string): boolean {
 async function processFile(section: string, filePath: string, parts: string[]): Promise<IndexItem[]> {
   const fileName = removeNumericPrefix(path.basename(filePath))
   const fileContent = await readFileContent(filePath)
-  const headings = extractHeadings(fileContent)
+  const headings = extractHeadings(fileContent, section)
 
   const headingHierarchies = generateHeadingHierarchies(headings, fileContent.data.title)
   headingHierarchies.unshift([fileContent.data.title])
