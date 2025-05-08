@@ -1,128 +1,80 @@
-import type { Heading } from 'mdast'
+import type { IndexItem } from './types'
 import fs from 'node:fs/promises'
-import os from 'node:os'
 import path from 'node:path'
-import string from '@poppinss/string'
-import matter from 'gray-matter'
-import remarkParse from 'remark-parse'
-import { unified } from 'unified'
-import { visit } from 'unist-util-visit'
+import { getDocsPath, getSections, readFileContent } from './fileUtils'
+import { extractHeadings, generateHeadingHierarchies } from './markdownUtils'
+import { generateUrl } from './urlUtils'
 
-interface IndexItem {
-  title: string
-  subtitle: string
-  url: string
-  section: string
+const EXCLUDED_EXTENSIONS = ['.yml', 'index.md'] as const
+
+/**
+ * Checks if a file should be processed
+ * @param filename - Name of the file to check
+ */
+function shouldProcessFile(filename: string): boolean {
+  return !EXCLUDED_EXTENSIONS.some(ext => filename.endsWith(ext))
 }
 
-const docsPath = path.join(os.homedir(), 'dev/forks/nuxt/docs')
+/**
+ * Processes a single markdown file
+ * @param section - The documentation section
+ * @param filePath - Path to the markdown file
+ * @param parts - Array of path segments
+ */
+async function processFile(section: string, filePath: string, parts: string[]): Promise<IndexItem[]> {
+  const fileName = path.basename(filePath).split('.')[1]
+  const fileContent = await readFileContent(filePath)
+  const headings = extractHeadings(fileContent)
 
-async function getSections(): Promise<string[]> {
-  try {
-    const items = await fs.readdir(docsPath)
-    const sections: string[] = []
-    for (const item of items) {
-      const fullPath = path.join(docsPath, item)
-      const stats = await fs.stat(fullPath)
-      if (stats.isDirectory()) {
-        sections.push(item)
-      }
-    }
-    return sections
-  }
-  catch (error) {
-    throw new Error('Chyba při čtení adresáře:', error.message)
-  }
+  const headingHierarchies = generateHeadingHierarchies(headings, fileContent.data.title)
+  headingHierarchies.unshift([fileContent.data.title])
+
+  return headingHierarchies.map((hierarchy) => {
+    const title = hierarchy.pop() ?? ''
+    const subtitle = hierarchy.join(' > ')
+    const url = generateUrl(section, [...parts, fileName], subtitle && title)
+
+    return { title, subtitle, url, section }
+  })
 }
 
+/**
+ * Walks through directory and processes all markdown files
+ * @param section - The documentation section
+ * @param dir - Directory to process
+ * @param parts - Array of path segments
+ */
 async function walkDir(section: string, dir: string, parts: string[] = []): Promise<IndexItem[]> {
   const items = (await fs.readdir(dir))
-    .filter(item => !item.endsWith('.yml'))
-    .filter(item => !item.endsWith('index.md'))
+    .filter(shouldProcessFile)
 
-  const results: IndexItem[] = []
-  for (const item of items) {
+  const results = await Promise.all(items.map(async (item) => {
     const fullPath = path.join(dir, item)
     const stats = await fs.stat(fullPath)
 
     if (stats.isDirectory()) {
-      const subResults = await walkDir(section, fullPath, [...parts, item.split('.')[1]])
-      results.push(...subResults)
+      return walkDir(section, fullPath, [...parts, item.split('.')[1]])
     }
-    else {
-      const filename = path.basename(fullPath).split('.')[1]
-      const content = await fs.readFile(fullPath, 'utf8')
 
-      const { data: frontMatterData, content: fileContent } = matter(content)
-      const tree = unified().use(remarkParse, { fragment: true }).parse(fileContent)
-      const headings: Heading[] = []
-      visit(tree, 'heading', (node) => {
-        if (node.depth <= 3) {
-          headings.push(node)
-        }
-      })
+    return processFile(section, fullPath, parts)
+  }))
 
-      const headingHierarchies = generateHeadingHierarchies(headings, frontMatterData.title)
-      headingHierarchies.unshift([frontMatterData.title])
-
-      const result = headingHierarchies.map((hierarchy) => {
-        const title = hierarchy.pop() ?? ''
-        const subtitle = hierarchy.join(' > ')
-        const url = generateUrl(section, [...parts, filename], subtitle && title)
-
-        return {
-          title,
-          subtitle,
-          url,
-          section,
-        }
-      })
-      results.push(...result)
-    }
-  }
-  return results
+  return results.flat()
 }
 
+/**
+ * Generates documentation index
+ */
 export async function generateIndex(): Promise<IndexItem[]> {
   const sections = await getSections()
+  console.log(JSON.stringify(sections, null, 2))
   const index: IndexItem[] = []
+
   for (const section of sections) {
     const sectionName = section.split('.')[1]
-    const results = await walkDir(sectionName, path.join(docsPath, section))
+    const results = await walkDir(sectionName, path.join(getDocsPath(), section))
     index.push(...results)
   }
+
   return index
-}
-
-function generateHeadingHierarchies(headings: Heading[], rootName: string): string[][] {
-  const result: string[][] = []
-  const stack: string[][] = [[rootName]]
-
-  for (const heading of headings) {
-    const depth = heading.depth
-    const title = heading.children.map(child => 'value' in child ? child.value : '').join('')
-
-    while (stack.length > depth - 1) {
-      stack.pop()
-    }
-
-    const lastPath = stack[stack.length - 1] || []
-    const currentPath = [...lastPath, title]
-    result.push(currentPath)
-    stack.push(currentPath)
-  }
-
-  return result
-}
-
-function generateUrl(section: string, pathSegments: string[], headingText?: string): string {
-  const path = pathSegments.join('/')
-  const baseUrl = 'https://nuxt.com/docs'
-
-  if (!headingText) {
-    return `${baseUrl}/${section}/${path}`
-  }
-
-  const fragment = string.slug(headingText, { lower: true, strict: true })
-  return `${baseUrl}/${section}/${path}#${fragment}`
 }
