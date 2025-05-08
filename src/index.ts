@@ -74,7 +74,7 @@ function generateHeadingHierarchies(headings: any[], rootName: string): string[]
 
   for (const heading of headings) {
     const depth = heading.depth
-    const title = heading.children[0].value
+    const title = heading.children.map((child: any) => child.value).join("")
 
     while (stack.length > depth - 1) {
       stack.pop()
@@ -90,7 +90,7 @@ function generateHeadingHierarchies(headings: any[], rootName: string): string[]
 
 function generateUrl(section: string, pathSegments: string[], headingText: string): string {
   const baseUrl = 'https://nuxt.com/docs'
-  const anchor = string.slug(headingText, { lower: true })
+  const fragment = string.slug(headingText, { lower: true, strict: true })
 
-  return `${baseUrl}/${section}/${pathSegments.join('/')}#${anchor}`
+  return `${baseUrl}/${section}/${pathSegments.join('/')}#${fragment}`
 }
